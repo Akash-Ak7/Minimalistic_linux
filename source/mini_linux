@@ -1,0 +1,140 @@
+#!/bin/bash
+################################################################################
+# This script will build the mini linux. It will download the
+# appropriate version of kernel and busybox mentioned in mini_linux_support.sh.
+# It will do defconfig for kernel and busybox, initialize the Initd and creates
+# a run script to launch mini linux using qemu emulator.
+#
+# Copyright (C) 2022 MIT license
+# Permission to copy and modify is granted under the MIT license.
+#
+# Author    : Akash
+################################################################################
+
+source ./mini_linux_support.sh
+
+# Create run script to boot linux using qemu emulator
+create_runscript()
+{
+    if [ -e $WORK_DIR/bzImage-$KERNEL_VERSION ]; then
+        if [ -e $WORK_DIR/initrd-$BUILD_NUMBER.img ]; then
+
+            if [ -e run.sh ]; then
+                rm run.sh
+            fi
+
+            #Create a script to run in qumu-system emulator
+            echo "!/bin/bash" > run.sh
+            echo "echo [+] starting qemu-system emulator..." >> run.sh
+            echo "qemu-system-x86_64 -kernel $WORK_DIR/bzImage-$KERNEL_VERSION -initrd $WORK_DIR/initrd-$BUILD_NUMBER.img -nographic -append 'console=ttyS0'" >> run.sh
+            chmod +x run.sh
+
+        else
+            error "initrd image is not found"
+        fi
+    else
+        error "Kernel image is not found"
+    fi
+}
+
+download_kernel()
+{
+    cd ./downloads/kernel
+    wget https://mirrors.edge.kernel.org/pub/linux/kernel/v$KERNEL_MAJOR.x/linux-$KERNEL_VERSION.tar.xz
+    cd $BASE_DIR
+}
+
+download_busybox()
+{
+    cd ./downloads/busybox
+    wget https://busybox.net/downloads/busybox-$BUSYBOX_VERSION.tar.bz2
+    cd $BASE_DIR
+}
+
+# Compile and build kernel, busybox and initrd image
+build_linux()
+{
+    mkdir -p build/$BUILD_DIR
+    cd build/$BUILD_DIR
+
+    # Extract kernel, defconfig and build kernel image
+    tar -xf ../../downloads/kernel/linux-$KERNEL_VERSION.tar.xz
+    cd linux-$KERNEL_VERSION
+        make defconfig
+        make -j8 || exit
+    cd ..
+
+    # Extract busybox, defconfig and build busybox image
+    tar -xf ../../downloads/busybox/busybox-$BUSYBOX_VERSION.tar.bz2
+    cd busybox-$BUSYBOX_VERSION
+        make defconfig
+        sed -i 's/# CONFIG_STATIC[^_].*/CONFIG_STATIC=y/g' .config
+        make -j8 || exit
+    cd ..
+
+    # work directory will have kernel image and initrd
+    mkdir -p work
+    cd work
+
+    cp ../linux-$KERNEL_VERSION/arch/x86_64/boot/bzImage ./bzImage-$KERNEL_VERSION
+
+    mkdir -p initrd
+    cd initrd
+
+    mkdir -p bin dev proc sys
+    cd bin
+
+    cp ../../../busybox-$BUSYBOX_VERSION/busybox ./busybox-$BUSYBOX_VERSION
+
+    for prog in $(./busybox-$BUSYBOX_VERSION --list); do    
+        ln -s /bin/busybox-$BUSYBOX_VERSION $prog
+    done
+
+    # Exit bin folder
+    cd ..
+
+    #init script for mounting folders
+    echo "#!/bin/sh" > init
+    echo "mount -t sys sys /sys" >> init
+    echo "mount -t proc proc /proc" >> init
+    echo "mount -t devtmpfs udev /dev" >> init
+    echo "sysctl -w kernel.printk="2 4 1 7"" >> init
+    echo "/bin/sh" >> init
+    echo "poweroff -f" >> init
+    chmod -R 777 .
+
+    find . | cpio -o -H newc > ../initrd-$BUILD_NUMBER.img
+
+    cd $BASE_DIR
+}
+
+# =========================================================
+#           Main execution starts here
+# =========================================================
+echo "[INFO]: KERNEL_VERSION=$KERNEL_VERSION"
+echo "[INFO]: BUSYBOX_VERSION=$BUSYBOX_VERSION"
+
+# Step out of source directory
+cd $BASE_DIR
+
+echo "pwd: $PWD"
+
+if [[ -d ./build/$BUILD_DIR ]]; then
+    echo "deleting : ./build/$BUILD_DIR"
+    rm -rf ./build/$BUILD_DIR
+fi
+
+
+if [[ ! -e ./downloads/kernel/linux-$KERNEL_VERSION.tar.xz ]]; then
+    echo "Creating downloads/kernel directory"
+    mkdir -p ./downloads/kernel
+    download_kernel
+fi
+
+if [[ ! -e ./downloads/busybox/busybox-$BUSYBOX_VERSION.tar.bz2 ]]; then
+    mkdir -p ./downloads/busybox
+    download_busybox
+fi
+
+build_linux
+create_runscript
