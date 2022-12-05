@@ -11,7 +11,7 @@
 # Author    : Akash
 ################################################################################
 
-source ./mini_linux_support.sh
+source ./source/mini_linux_support.sh
 
 # Create run script to boot linux using qemu emulator
 create_runscript()
@@ -39,16 +39,12 @@ create_runscript()
 
 download_kernel()
 {
-    cd ./downloads/kernel
-    wget https://mirrors.edge.kernel.org/pub/linux/kernel/v$KERNEL_MAJOR.x/linux-$KERNEL_VERSION.tar.xz
-    cd $BASE_DIR
+    wget https://mirrors.edge.kernel.org/pub/linux/kernel/v$KERNEL_MAJOR.x/linux-$KERNEL_VERSION.tar.xz -P ./downloads/kernel
 }
 
 download_busybox()
 {
-    cd ./downloads/busybox
-    wget https://busybox.net/downloads/busybox-$BUSYBOX_VERSION.tar.bz2
-    cd $BASE_DIR
+    wget https://busybox.net/downloads/busybox-$BUSYBOX_VERSION.tar.bz2 -P ./downloads/busybox
 }
 
 # Compile and build kernel, busybox and initrd image
@@ -113,11 +109,6 @@ build_linux()
 # =========================================================
 echo "[INFO]: KERNEL_VERSION=$KERNEL_VERSION"
 echo "[INFO]: BUSYBOX_VERSION=$BUSYBOX_VERSION"
-
-# Step out of source directory
-cd $BASE_DIR
-
-echo "pwd: $PWD"
 
 if [[ -d ./build/$BUILD_DIR ]]; then
     echo "deleting : ./build/$BUILD_DIR"
