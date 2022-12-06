@@ -19,15 +19,15 @@ create_runscript()
     if [ -e $WORK_DIR/bzImage-$KERNEL_VERSION ]; then
         if [ -e $WORK_DIR/initrd-$BUILD_NUMBER.img ]; then
 
-            if [ -e run.sh ]; then
-                rm run.sh
+            if [ -e run ]; then
+                rm run
             fi
 
             #Create a script to run in qumu-system emulator
-            echo "!/bin/bash" > run.sh
-            echo "echo [+] starting qemu-system emulator..." >> run.sh
-            echo "qemu-system-x86_64 -kernel $WORK_DIR/bzImage-$KERNEL_VERSION -initrd $WORK_DIR/initrd-$BUILD_NUMBER.img -nographic -append 'console=ttyS0'" >> run.sh
-            chmod +x run.sh
+            echo "!/bin/bash" > run
+            echo "echo [+] starting qemu-system emulator..." >> run
+            echo "qemu-system-x86_64 -kernel $WORK_DIR/bzImage-$KERNEL_VERSION -initrd $WORK_DIR/initrd-$BUILD_NUMBER.img -nographic -append 'console=ttyS0'" >> run
+            chmod +x run
 
         else
             error "initrd image is not found"

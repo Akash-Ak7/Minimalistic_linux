@@ -2,9 +2,9 @@ build:
 	@echo "Building the mini_linux"
 	./source/mini_linux
 
-run:
+boot:
 	@echo "Starting mini_linux"
-	./run.sh
+	./run
 
 clean:
 	@echo "Removing all downloads."
@@ -12,10 +12,10 @@ clean:
 	@echo "Removing all builds."
 	rm -rf ./build
 	@echo "Remove run script if exists."
-	rm -f ./run.sh
+	rm -f ./run
 
 all:
 	@echo "Making mini_linux"
 	./source/mini_linux
 	@echo "Starting mini_linux"
-	./run.sh
+	./run
