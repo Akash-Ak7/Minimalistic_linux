@@ -39,12 +39,12 @@ create_runscript()
 
 download_kernel()
 {
-    wget https://mirrors.edge.kernel.org/pub/linux/kernel/v$KERNEL_MAJOR.x/linux-$KERNEL_VERSION.tar.xz -P ./downloads/kernel
+    wget -c https://mirrors.edge.kernel.org/pub/linux/kernel/v$KERNEL_MAJOR.x/linux-$KERNEL_VERSION.tar.xz -P ./downloads/kernel || rm -f ./downloads/kernel/linux-$KERNEL_VERSION.tar.xz
 }
 
 download_busybox()
 {
-    wget https://busybox.net/downloads/busybox-$BUSYBOX_VERSION.tar.bz2 -P ./downloads/busybox
+    wget -c https://busybox.net/downloads/busybox-$BUSYBOX_VERSION.tar.bz2 -P ./downloads/busybox || rm -f ./downloads/busybox/busybox-$BUSYBOX_VERSION.tar.bz2
 }
 
 # Compile and build kernel, busybox and initrd image
@@ -115,17 +115,8 @@ if [[ -d ./build/$BUILD_DIR ]]; then
     rm -rf ./build/$BUILD_DIR
 fi
 
-
-if [[ ! -e ./downloads/kernel/linux-$KERNEL_VERSION.tar.xz ]]; then
-    echo "Creating downloads/kernel directory"
-    mkdir -p ./downloads/kernel
-    download_kernel
-fi
-
-if [[ ! -e ./downloads/busybox/busybox-$BUSYBOX_VERSION.tar.bz2 ]]; then
-    mkdir -p ./downloads/busybox
-    download_busybox
-fi
-
+mkdir -p ./downloads/{kernel,busybox}
+download_kernel
+download_busybox
 build_linux
 create_runscript

@@ -12,7 +12,7 @@ clean:
 	@echo "Removing all builds."
 	rm -rf ./build
 	@echo "Remove run script if exists."
-	rm -rf ./run.sh
+	rm -f ./run.sh
 
 all:
 	@echo "Making mini_linux"
